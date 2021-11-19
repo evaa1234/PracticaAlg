@@ -90,6 +90,44 @@ void read_parameters(int argc, char **argv) {
     }
 }
 
+/*********************
+Funcions de basics.cpp
+*********************/
+
+//Retorna el nº de veins de i que pertanyen al conjunt dominador d'influencia positiva D.
+int calcula_veins_del_conjunt_D(int i, const set<int>& D){
+    int contador = 0;
+    for(auto a : neighbors[i]) {
+        bool trobat = false;
+        set<int>::iterator it;
+        for(it = D.begin(); it!=D.end() and not trobat; ++it) {
+            if(*it == a) {
+                trobat = true;
+                ++contador;
+            }
+        }
+    }
+    return contador;
+}
+
+//Retorna true si el conjunt D donat es un PIDS.
+bool checkPIDS(const set<int>& D) {
+    bool malament = false;
+    int num_veins_del_conjunt_domindaor;
+    int num_veins_totals;
+    for(int i=1; i<= n_of_nodes and not malament; ++i) {
+        num_veins_del_conjunt_domindaor = calcula_veins_del_conjunt_D(i, D);
+        num_veins_totals = neighbors[i].size();
+        if(num_veins_totals % 2 == 1) ++num_veins_totals;
+        if(num_veins_del_conjunt_domindaor < num_veins_totals/2) malament = true;
+    }
+    if(malament) return false;
+    else return true;
+}
+
+/*****************
+Funcions Auxiliars
+******************/
 
 // Pre : 	Cada vertex ha de tenir un identificador corresponent a un numero de 
 // 			0 a NumVert-1, i hi ha NumVert vertexs al graf.
@@ -117,6 +155,17 @@ void escriureGraf(Graf G) {
 		}
 		cout << endl;
 	}
+}
+
+// Pre :    True.
+// Post:    Escriu els nodes que son solucio.
+void EscriureSolucio(const vector<int>& S) {
+    cout << "Els nodes solucio son: " << endl << endl;
+    for(int i = 0; i < S.size(); ++i) {
+        if(S[i] == 1) cout << i << " ";
+    }
+    cout << endl;
+    
 }
 
 // Pre : 	G es un graf connex i no dirigit, on cada vertex te un
@@ -199,17 +248,82 @@ vector<int> GrafPruning(Graf G, map<int, vector<int> > GrauVert, map<int, int> V
 	return S;
 }
 
+// Pre :    S es el vector solucio que te marcats a 1 els vertexs solucio
+// Post:    Retorna el set de vertexs solucio.
+set<int> convertSToSet(const vector<int>& S) {
+    set<int> D;
+    for(int i = 0; i < S.size(); ++i) {
+        if(S[i] == 1) D.insert(i);
+    }
+    
+    return D;
+}
+
+set<int> uncoverVertexs(const vector<int>& S) {
+    set<int> C;
+    for(int i = 0; i < S.size(); ++i) {
+        if(S[i] == 0) C.insert(i);
+    }
+    return C;
+}
+
+int numVeinsQueSonSolucio(const int& v, const vector<int>& S, const Graf& G) {
+    int numVeinsSol = 0;
+    for(int i = 0; i < G[v].size(); ++i) {
+        if(S[G[v][i]] == 1) ++numVeinsSol;
+    }
+    return numVeinsSol;
+}
+
+// Pre :    True.
+// Post:    Retorna el valor absolut d'Ns.
+int valorAbs(const int& Ns) {
+    if(Ns < 0) return -Ns;
+    return Ns;
+}
+
+// Pre :    V es un vertex que pertany a VertGrau
+// Post:    Retorna Part_entera_per_dalt(grau de v/2) - valor_absolut(num. de veins de v que son solucio).
+int h_s(const int& v, map<int, int> VertGrau, const vector<int>& S, const Graf& G) {
+    map<int, int>::iterator it = VertGrau.find(v);
+    int hs;
+    if(it->second%2 == 0) hs = it->second/2;
+    else hs = it->second/2 + 1;
+    int Ns = numVeinsQueSonSolucio(v, S, G);
+    hs -= valorAbs(Ns);
+    return hs;
+}
+
 // Pre : 	Un Graf G connex i no-dirigit.
 // Post: 	S sera una solucio de MPIDS.
-void greedyMPIDS(Graf& G, int NumVert) {
+vector<int> greedyMPIDS(Graf& G, int NumVert) {
 
 	map<int, vector<int> > GrauVert = OrdenarVertexsGrauAscendent(G); // Grau->Vertex
 	map<int, int> VertGrau = CadaVertexQuinGrau(GrauVert); // Vertex -> Grau
-	vector<int> S = GrafPruning(G, GrauVert, VertGrau); // S: Solucio parcial
-    
-    for(int i = 0; i < S.size(); ++i) cout << " " << S[i];
-    cout << endl;
-    
+	vector<int> S = GrafPruning(G, GrauVert, VertGrau); // S = Solucio parcial
+    set<int> D = convertSToSet(S); // D = S convertit a set (es necessari per la funcio checkPIDS, ja implementada)
+    set<int> C = uncoverVertexs(S); // C = vertexs que no formen part de la solucio de moment
+    while(not checkPIDS(D)) { // Mentre no hi hagi una solucio:
+        map<int, vector<int> >::iterator it = GrauVert.begin();
+        while(it != GrauVert.end()) { // Recorrem tots els vertexs en grau ascendent
+            vector<int> vertexs = it->second;
+            for(int i = 0; i < vertexs.size(); ++i) {
+                int v = vertexs[i];
+                // Si el vertex[i] no es solucio:
+                if(C.find(v) != C.end()) {
+                    int p = h_s(v, VertGrau, S, G);
+                    for(int j = 1; j <= p; ++j) {
+                        // (...)
+                    }
+                    // (...)
+                }
+                
+            }
+            ++it;
+        }
+    }
+    // Reduce(S)
+    return S;
 }
 
 
@@ -276,7 +390,7 @@ int main( int argc, char **argv ) {
     int NumVert = n_of_nodes;
     Graf G(NumVert);
 	llegirGraf(G, NumVert, neighbors);
-	greedyMPIDS(G, NumVert);
-	//escriureGraf(G);
+	vector<int> S = greedyMPIDS(G, NumVert);
+	EscriureSolucio(S);
 }
 
