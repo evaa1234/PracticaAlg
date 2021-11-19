@@ -83,7 +83,7 @@ map<int, int> CadaVertexQuinGrau(map<int, vector<int> > GrauVert) {
 	}
 	return VertGrau;
 }
-
+/*
 // Pre : 	G es un graf connex i no dirigit, on cada vertex te un
 // 			identificador de 0 a NumVert-1, i hi ha NumVert vertexs.
 //			GrauVert son parells (Grau, conjunt de Vertexs).
@@ -102,7 +102,7 @@ vector<int> GrafPruning(Graf G, map<int, vector<int> > GrauVert, map<int, int> V
 		++it;
 	}
 	return S;
-}
+}*/
 
 // Pre : 	Un Graf G connex i no-dirigit.
 // Post: 	S sera una solucio parcial de MPIDS.
@@ -110,7 +110,7 @@ void greedyMPIDS(Graf& G, int NumVert) {
 
 	map<int, vector<int> > GrauVert = OrdenarVertexsGrauAscendent(G);
 	map<int, int> VertGrau = CadaVertexQuinGrau(GrauVert);
-	vector<int> S = GrafPruning(G, GrauVert, VertGrau);
+	//vector<int> S = GrafPruning(G, GrauVert, VertGrau);
 }
 
 
@@ -131,6 +131,3 @@ int main() {
 		cout << it->first << " " << it->second << endl;
 		++it;
 	}*/
-
-
-
