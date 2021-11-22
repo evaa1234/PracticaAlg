@@ -181,15 +181,6 @@ map<int, vector<int> > OrdenarVertexsGrauAscendent(Graf G) {
 		}
 		else it->second.push_back(i);
 	}
-	/*
-	cout << "GrauVert:" << endl;
-	map<int,vector<int> >::iterator it2 = m.begin();
-	while(it2 != m.end()) {
-		cout << it2->first << " ";
-		for(int j = 0; j < it2->second.size(); ++j) cout << it2->second[j] << " ";
-		cout << endl;
-		++it2;
-	}*/
 	return m;
 }
 
@@ -204,13 +195,6 @@ map<int, int> CadaVertexQuinGrau(map<int, vector<int> > GrauVert) {
 		}
 		++it;
 	}
-	/*
-	cout << "VertGrau:" << endl;
-	map<int,int>::iterator it2 = VertGrau.begin();
-	while(it2 != VertGrau.end()) {
-		cout << it2->first << " " << it2->second << endl;
-		++it2;
-	}*/
 	return VertGrau;
 }
 
@@ -259,14 +243,8 @@ set<int> convertSToSet(const vector<int>& S) {
     return D;
 }
 
-set<int> uncoverVertexs(const vector<int>& S) {
-    set<int> C;
-    for(int i = 0; i < S.size(); ++i) {
-        if(S[i] == 0) C.insert(i);
-    }
-    return C;
-}
-
+// Pre :    v es un node de G.
+// Post:    retorna la quantitat de veins de v que formen part del conjuny solucio PIDS.
 int numVeinsQueSonSolucio(const int& v, const vector<int>& S, const Graf& G) {
     int numVeinsSol = 0;
     for(int i = 0; i < G[v].size(); ++i) {
@@ -294,35 +272,99 @@ int h_s(const int& v, map<int, int> VertGrau, const vector<int>& S, const Graf& 
     return hs;
 }
 
+// Pre :    True.
+// Post:    Retorna el conjunt de nodes que encara no tenen la meitat o mes dels seus veins 
+//          a PIDS.
+set<int> uncoverVertexs(const vector<int>& S, const vector<vector<int> >& G, map<int, int> VertGrau) {
+    set<int> C;
+    for(int i = 0; i < G.size(); ++i) {
+        int hs = h_s(i, VertGrau, S, G);
+        if(hs > 0) C.insert(i);
+    }
+    return C;
+}
+
+// Pre :    v es un node del graf G
+// Post:    retorna el vei de v tal que no forma part de la solucio i s'ha d'afegir a la solució per 
+//          a que v tingui almenys la meitat dels seus nodes a PIDS.
+int argMaxNeedDegree(const vector<int>& v, const vector<vector<int> >& G, map<int, int> VertGrau, vector<int> S) {
+    int argMax = 0;
+    int MaxNeedDegree = 0;
+    for(int i = 0; i < v.size(); ++i) {
+        int sumatori = 0;
+        for(int u = 0; u < G[v[i]].size(); ++u) {
+            int hs = h_s(G[v[i]][u], VertGrau, S, G);
+            if(hs > 0) sumatori += hs;
+        }
+        if(sumatori > MaxNeedDegree) {
+            MaxNeedDegree = sumatori;
+            argMax = v[i];
+        }
+    }
+    return argMax;
+}
+
+// Pre :    v es un node del graf G
+// Post:    retorna el vei de v tal que no forma part de la solucio i s'ha d'afegir a la solució per 
+//          a que v tingui almenys la meitat dels seus nodes a PIDS.
+int computeCdMax(const int& v, const vector<vector<int> >& G, const vector<int>& S, map<int, int> VertGrau) {
+    int cd_max = 0;
+    // Mirem quin es el cd_max:
+    for(int i = 0; i < G[v].size(); ++i) {
+        if(S[G[v][i]] == 0) {
+            int hs = h_s(G[v][i], VertGrau, S, G);
+            hs = valorAbs(hs);
+            if(hs > cd_max) cd_max = hs;
+            
+        }
+    }
+    // Afegim al vector els vertexs que tenen cd_max:
+    vector<int> vertexsWithMaxCd(0);
+    for(int i = 0; i < G[v].size(); ++i) {
+        if(S[G[v][i]] == 0) {
+            int hs = h_s(G[v][i], VertGrau, S, G);
+            hs = valorAbs(hs);
+            if(hs == cd_max) vertexsWithMaxCd.push_back(G[v][i]);
+        }
+    }
+    // Desempatem:
+    return argMaxNeedDegree(vertexsWithMaxCd, G, VertGrau, S);
+}
+
+
 // Pre : 	Un Graf G connex i no-dirigit.
 // Post: 	S sera una solucio de MPIDS.
 vector<int> greedyMPIDS(Graf& G, int NumVert) {
 
 	map<int, vector<int> > GrauVert = OrdenarVertexsGrauAscendent(G); // Grau->Vertex
 	map<int, int> VertGrau = CadaVertexQuinGrau(GrauVert); // Vertex -> Grau
-	vector<int> S = GrafPruning(G, GrauVert, VertGrau); // S = Solucio parcial
+	vector<int> S = GrafPruning(G, GrauVert, VertGrau); // S = Solucio parcial 
     set<int> D = convertSToSet(S); // D = S convertit a set (es necessari per la funcio checkPIDS, ja implementada)
-    set<int> C = uncoverVertexs(S); // C = vertexs que no formen part de la solucio de moment
-    while(not checkPIDS(D)) { // Mentre no hi hagi una solucio:
+    set<int> C = uncoverVertexs(S, G, VertGrau); // C = vertexs que no estan coberts de moment
+    while(C.size() > 0) { // Mentre no hi hagi una solucio:
         map<int, vector<int> >::iterator it = GrauVert.begin();
         while(it != GrauVert.end()) { // Recorrem tots els vertexs en grau ascendent
             vector<int> vertexs = it->second;
             for(int i = 0; i < vertexs.size(); ++i) {
                 int v = vertexs[i];
-                // Si el vertex[i] no es solucio:
+                // Si el vertex[i] no esta cobert:
                 if(C.find(v) != C.end()) {
+                    //cout << "Mirem el node " << v << endl;
                     int p = h_s(v, VertGrau, S, G);
-                    for(int j = 1; j <= p; ++j) {
-                        // (...)
+                    //cout << "El valor p es: " << p << endl;
+                    for(int j = 1; j <= p; ++j) { // Iterem sobre els veins de v que no son part de la solucio i que s'han de marcar per tal que la meitat dels seus veins siguin solucio i v quedi cobert:
+                        int u = computeCdMax(v, G, S, VertGrau); 
+                        S[u] = 1;
+                        D.insert(u);
                     }
-                    // (...)
+                    C.erase(v); // v esta cobert
+                    cout << "Nodes que no estan coberts:" << C.size() << endl;
                 }
-                
             }
             ++it;
         }
     }
-    // Reduce(S)
+    // Reduce(S) // Aqui es podria implementar una funcio Reduce que fes més petit el conjunt de nodes solucio (Es deixa com a tasca pendent per millorar el programa)
     return S;
 }
 
@@ -369,28 +411,15 @@ int main( int argc, char **argv ) {
     Timer timer;
 
     // Example for requesting the elapsed computation time at any moment: 
-    // double ct = timer.elapsed_time(Timer::VIRTUAL);
+    double ct = timer.elapsed_time(Timer::VIRTUAL);
 
     // HERE GOES YOUR GREEDY HEURISTIC
-    // When finished with generating a solution, first take the computation 
-    // time as explained above. Say you store it in variable ct.
-    // Then write the following to the screen: 
-    // cout << "value " << <value of your solution> << "\ttime " << ct << endl;
-    /*
-    for(int i = 0; i < neighbors.size(); ++i) {
-        set<int>::iterator it = neighbors[i].begin(); 
-        cout << "Node " << i << ": ";
-        while(it != neighbors[i].end()) {
-            cout << *it << " ";
-            ++it;
-        }
-        cout << endl;
-    }*/
     
     int NumVert = n_of_nodes;
     Graf G(NumVert);
 	llegirGraf(G, NumVert, neighbors);
 	vector<int> S = greedyMPIDS(G, NumVert);
 	EscriureSolucio(S);
+    cout << "\ttime " << ct << endl;
 }
 
