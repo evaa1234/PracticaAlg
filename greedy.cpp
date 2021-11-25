@@ -90,41 +90,6 @@ void read_parameters(int argc, char **argv) {
     }
 }
 
-/*********************
-Funcions de basics.cpp
-*********************/
-
-//Retorna el nº de veins de i que pertanyen al conjunt dominador d'influencia positiva D.
-int calcula_veins_del_conjunt_D(int i, const set<int>& D){
-    int contador = 0;
-    for(auto a : neighbors[i]) {
-        bool trobat = false;
-        set<int>::iterator it;
-        for(it = D.begin(); it!=D.end() and not trobat; ++it) {
-            if(*it == a) {
-                trobat = true;
-                ++contador;
-            }
-        }
-    }
-    return contador;
-}
-
-//Retorna true si el conjunt D donat es un PIDS.
-bool checkPIDS(const set<int>& D) {
-    bool malament = false;
-    int num_veins_del_conjunt_domindaor;
-    int num_veins_totals;
-    for(int i=1; i<= n_of_nodes and not malament; ++i) {
-        num_veins_del_conjunt_domindaor = calcula_veins_del_conjunt_D(i, D);
-        num_veins_totals = neighbors[i].size();
-        if(num_veins_totals % 2 == 1) ++num_veins_totals;
-        if(num_veins_del_conjunt_domindaor < num_veins_totals/2) malament = true;
-    }
-    if(malament) return false;
-    else return true;
-}
-
 /*****************
 Funcions Auxiliars
 ******************/
@@ -283,6 +248,7 @@ set<int> uncoverVertexs(const vector<int>& S, const vector<vector<int> >& G, map
     }
     return C;
 }
+                    //cout << "El valor p es: " << p << endl;
 
 // Pre :    v es un node del graf G
 // Post:    retorna el vei de v tal que no forma part de la solucio i s'ha d'afegir a la solució per 
@@ -331,6 +297,23 @@ int computeCdMax(const int& v, const vector<vector<int> >& G, const vector<int>&
     return argMaxNeedDegree(vertexsWithMaxCd, G, VertGrau, S);
 }
 
+// Pre :    S conte una solucio al problema, que pot tenir veretxs redundants
+// Post:    S conte una solucio al problema, sense vertexs redundants
+void Reduce(vector<int>& S, const Graf& G, const map<int, int>& VertGrau) {
+    for(int i = 0; i < S.size(); ++i) {
+        if(S[i] == 1) { // Per cada vertex pertanyent a la solucio:
+            int v = i;
+            bool tots_hs_menors_zero = true;
+            for(int j = 0; j < G[v].size(); ++j) {
+                int hs = h_s(G[v][j], VertGrau, S, G);
+                if(hs >= 0) tots_hs_menors_zero = false;
+            }
+            // Si tots els veins de v tenen h_s < 0:
+            if(tots_hs_menors_zero) S[i] = 0; 
+        }
+    }
+}
+
 
 // Pre : 	Un Graf G connex i no-dirigit.
 // Post: 	S sera una solucio de MPIDS.
@@ -349,9 +332,7 @@ vector<int> greedyMPIDS(Graf& G, int NumVert) {
                 int v = vertexs[i];
                 // Si el vertex[i] no esta cobert:
                 if(C.find(v) != C.end()) {
-                    //cout << "Mirem el node " << v << endl;
                     int p = h_s(v, VertGrau, S, G);
-                    //cout << "El valor p es: " << p << endl;
                     for(int j = 1; j <= p; ++j) { // Iterem sobre els veins de v que no son part de la solucio i que s'han de marcar per tal que la meitat dels seus veins siguin solucio i v quedi cobert:
                         int u = computeCdMax(v, G, S, VertGrau); 
                         S[u] = 1;
@@ -364,7 +345,7 @@ vector<int> greedyMPIDS(Graf& G, int NumVert) {
             ++it;
         }
     }
-    // Reduce(S) // Aqui es podria implementar una funcio Reduce que fes més petit el conjunt de nodes solucio (Es deixa com a tasca pendent per millorar el programa)
+    Reduce(S, G, VertGrau); // Aqui es podria implementar una funcio Reduce que fes més petit el conjunt de nodes solucio (Es deixa com a tasca pendent per millorar el programa)
     return S;
 }
 
