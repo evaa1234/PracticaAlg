@@ -391,8 +391,6 @@ int main( int argc, char **argv ) {
     // the computation time starts now
     Timer timer;
 
-    // Example for requesting the elapsed computation time at any moment: 
-    double ct = timer.elapsed_time(Timer::VIRTUAL);
 
     // HERE GOES YOUR GREEDY HEURISTIC
     
@@ -401,6 +399,8 @@ int main( int argc, char **argv ) {
 	llegirGraf(G, NumVert, neighbors);
 	vector<int> S = greedyMPIDS(G, NumVert);
 	EscriureSolucio(S);
+    // Example for requesting the elapsed computation time at any moment: 
+    double ct = timer.elapsed_time(Timer::VIRTUAL);
     cout << "\ttime " << ct << endl;
 }
 
