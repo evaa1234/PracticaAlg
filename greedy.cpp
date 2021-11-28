@@ -322,7 +322,6 @@ vector<int> greedyMPIDS(Graf& G, int NumVert) {
 	map<int, vector<int> > GrauVert = OrdenarVertexsGrauAscendent(G); // Grau->Vertex
 	map<int, int> VertGrau = CadaVertexQuinGrau(GrauVert); // Vertex -> Grau
 	vector<int> S = GrafPruning(G, GrauVert, VertGrau); // S = Solucio parcial 
-    set<int> D = convertSToSet(S); // D = S convertit a set (es necessari per la funcio checkPIDS, ja implementada)
     set<int> C = uncoverVertexs(S, G, VertGrau); // C = vertexs que no estan coberts de moment
     while(C.size() > 0) { // Mentre no hi hagi una solucio:
         map<int, vector<int> >::iterator it = GrauVert.begin();
@@ -336,7 +335,6 @@ vector<int> greedyMPIDS(Graf& G, int NumVert) {
                     for(int j = 1; j <= p; ++j) { // Iterem sobre els veins de v que no son part de la solucio i que s'han de marcar per tal que la meitat dels seus veins siguin solucio i v quedi cobert:
                         int u = computeCdMax(v, G, S, VertGrau); 
                         S[u] = 1;
-                        D.insert(u);
                     }
                     C.erase(v); // v esta cobert
                     cout << "Nodes que no estan coberts:" << C.size() << endl;
