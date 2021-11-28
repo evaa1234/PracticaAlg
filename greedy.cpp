@@ -343,7 +343,7 @@ vector<int> greedyMPIDS(Graf& G, int NumVert) {
             ++it;
         }
     }
-    Reduce(S, G, VertGrau); // Aqui es podria implementar una funcio Reduce que fes més petit el conjunt de nodes solucio (Es deixa com a tasca pendent per millorar el programa)
+    Reduce(S, G, VertGrau);  
     return S;
 }
 
